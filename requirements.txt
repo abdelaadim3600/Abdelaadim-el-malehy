@@ -1,0 +1,48 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from textblob import TextBlob
+import re
+
+def analyze_chat(file_path):
+    # قراءة ملف المحادثة النصي
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+
+    # استخراج البيانات من المحادثة
+    messages = []
+    for line in lines:
+        if line.strip() == '':
+            continue
+        date_time, message = line.split(" - ", 1)
+        sender, message_text = message.split(":", 1)
+        messages.append({"date_time": date_time, "sender": sender.strip(), "message": message_text.strip()})
+
+    # تحويل البيانات إلى DataFrame
+    df = pd.DataFrame(messages)
+
+    # تحليل الكلمات الأكثر تكرارًا
+    word_freq = df['message'].str.split(expand=True).stack().value_counts()
+
+    # تحليل المشاعر
+    def get_sentiment(text):
+        return TextBlob(text).sentiment.polarity
+
+    df['sentiment'] = df['message'].apply(get_sentiment)
+
+    # رسم تحليل المشاعر
+    plt.figure(figsize=(10, 6))
+    plt.hist(df['sentiment'], bins=30, color='skyblue', edgecolor='black')
+    plt.title('Sentiment Analysis')
+    plt.xlabel('Sentiment')
+    plt.ylabel('Frequency')
+    plt.show()
+
+    # عرض الإحصائيات
+    print("Most frequent words:")
+    print(word_freq.head(10))
+    print("\nSentiment Analysis:")
+    print(f"Average sentiment score: {df['sentiment'].mean()}")
+
+# تشغيل الكود
+if __name__ == "__main__":
+    analyze_chat('whatsapp_chat.txt')  # استبدل بهذا المسار الصحيح للملف النصي
